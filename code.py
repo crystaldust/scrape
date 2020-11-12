@@ -6,12 +6,11 @@ import multiprocessing
 import urllib.request
 import random
 
-TOKEN = 'a4a064891d0941a6e1c9f769b2c3906f65ac6622'
+TOKEN = 'YOUR_TOKEN'
 FROM = 0
 TO = 10000
 
-def rand_select_user_agent():
-    USER_AGENT_LIST = [
+USER_AGENT_LIST = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
     "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.0; Acoo Browser; SLCC1; .NET CLR 2.0.50727; Media Center PC 5.0; .NET CLR 3.0.04506)",
     "Mozilla/4.0 (compatible; MSIE 7.0; AOL 9.5; AOLBuild 4337.35; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
@@ -47,9 +46,22 @@ def rand_select_user_agent():
     "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11",
     "Mozilla/5.0 (X11; U; Linux x86_64; zh-CN; rv:1.9.2.10) Gecko/20100922 Ubuntu/10.10 (maverick) Firefox/3.6.10",
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-    ]
-    USER_AGENT = random.choice(USER_AGENT_LIST)
-    return USER_AGENT
+]
+
+headers = {
+    'Referer': 'https://github.com/rust-lang/team/graphs/contributors',
+    'Cookie': '_octo=GH1.1.619591892.1603265695; _ga=GA1.2.93098847.1603265768; _device_id=ac78fa16de70480db92c69a1449d37c9; user_session=prM3MrKaRK-fret7VllqZpbeW50XLnBiEQkUQet9qWlXnrm_; __Host-user_session_same_site=prM3MrKaRK-fret7VllqZpbeW50XLnBiEQkUQet9qWlXnrm_; logged_in=yes; dotcom_user=chargerKong; has_recent_activity=1; tz=Asia%2FShanghai; _gh_sess=wPV6%2F9v15dk0A1eqwScTET98zEZk6G%2BjLdlvf%2FuxiQjr6fSXAgYaVuFO0esNLwDEIV4BsdreniWNO6kJT%2BY%2BX9JYsIzYn%2BBzNKxysmG31HZSVE6RRk%2B4SxQ42mvK90m7bFWZaBek2dE%2BJEAHztSlmbsnCUd4%2B%2FceTDw5yRPUuscjlP%2F%2FOOrzd6t5k9Wkag5A--knXCKDcW5cabS%2F6m--D9GunWquaHRW%2Fc8Gyuawqg%3D%3D',
+    'accept': 'application/json',
+    'Accept-Encoding': 'gzip, deflate, br',
+    'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,eo;q=0.7',
+    'Connection': 'keep-alive',
+    'Host': 'github.com',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'X-Requested-With': 'XMLHttpRequest',
+    'Authorization': 'token ' + TOKEN
+}
 
 def multi_process_download(task, map_list, process_num):
     pool = multiprocessing.Pool(process_num)
@@ -58,7 +70,7 @@ def multi_process_download(task, map_list, process_num):
     pool.join()
 
 def download_commit_data(crate_name):
-    print('Downloading the committers of', crate_name)
+    print(f'Downloading the committers of {crate_name}')
     #######This is used for downloading error.#######
     with open('data/crate_label.txt') as f:
         data = [i.strip() for i in f.readlines()]
@@ -66,37 +78,19 @@ def download_commit_data(crate_name):
         print('The committer info of', crate_name, 'has been downloaded.')
         return
     #################################################
+    if crate_name not in crate_dict or 'repository' not in crate_dict[crate_name]:
+        raise Exception(f'There is no repository url for {crate_name}')
+
     repo_url = crate_dict[crate_name]['repository']
-    #print(repo_url)
-    if repo_url == None:
-        print('There is no repository url for', crate_name)
-        return
-    
+    headers['user-agent'] = random.choice(USER_AGENT_LIST)
     request_url = repo_url + '/graphs/contributors-data'
-    headers = {
-        'user-agent': rand_select_user_agent(),
-        'Referer': 'https://github.com/rust-lang/team/graphs/contributors',
-        'Cookie': '_octo=GH1.1.619591892.1603265695; _ga=GA1.2.93098847.1603265768; _device_id=ac78fa16de70480db92c69a1449d37c9; user_session=prM3MrKaRK-fret7VllqZpbeW50XLnBiEQkUQet9qWlXnrm_; __Host-user_session_same_site=prM3MrKaRK-fret7VllqZpbeW50XLnBiEQkUQet9qWlXnrm_; logged_in=yes; dotcom_user=chargerKong; has_recent_activity=1; tz=Asia%2FShanghai; _gh_sess=wPV6%2F9v15dk0A1eqwScTET98zEZk6G%2BjLdlvf%2FuxiQjr6fSXAgYaVuFO0esNLwDEIV4BsdreniWNO6kJT%2BY%2BX9JYsIzYn%2BBzNKxysmG31HZSVE6RRk%2B4SxQ42mvK90m7bFWZaBek2dE%2BJEAHztSlmbsnCUd4%2B%2FceTDw5yRPUuscjlP%2F%2FOOrzd6t5k9Wkag5A--knXCKDcW5cabS%2F6m--D9GunWquaHRW%2Fc8Gyuawqg%3D%3D',
-        'accept': 'application/json',
-        'Accept-Encoding': 'gzip, deflate, br',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8,eo;q=0.7',
-        'Connection': 'keep-alive',
-        'Host': 'github.com',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'X-Requested-With': 'XMLHttpRequest',
-        'Authorization': 'token ' + TOKEN
-    }
     response = requests.get(request_url, headers=headers)
-    if response.status_code <= 299:
-        print(response.status_code)
-        with open('data/crate/' + crate_name + '_commits.json', 'w') as f:
-            json.dump(response.text, f)
-    else:
-        print('Response error:', response.status_code)
-        return
-    #######This is used for downloading error.#######
+
+    if response.status_code < 200 or response.status_code >= 300:
+        raise Exception(f'Response error {response.status_code}')
+
+    with open('data/crate/' + crate_name + '_commits.json', 'w') as f:
+        json.dump(response.text, f)
     with open('data/crate_label.txt', 'a') as f:
         f.write(crate_name + '\n')
     ################################################# 
@@ -111,12 +105,11 @@ with open('data/only_crate.txt') as f:
 
 #multi_process_download(download_commit_data, crate_list[12000:14000], 4)
 failed = []
-for i in range(FROM, TO):
-    crate = crate_list[i]
+for crate in crate_list[FROM:TO]:
     try:
         download_commit_data(crate)
     except Exception as e:
-        print('failed with', crate)
+        print(f'failed to download {crate}, reason:{e}')
         failed.append(crate)
 
 with open('./fails', 'w') as f:
