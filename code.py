@@ -6,6 +6,10 @@ import multiprocessing
 import urllib.request
 import random
 
+TOKEN = 'YOUR_TOKEN'
+FROM = 12000
+TO = 14000
+
 def rand_select_user_agent():
     USER_AGENT_LIST = [
     "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1; AcooBrowser; .NET CLR 1.1.4322; .NET CLR 2.0.50727)",
@@ -80,7 +84,7 @@ def download_commit_data(crate_name):
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-origin',
         'X-Requested-With': 'XMLHttpRequest',
-        'Authorization': 'token 8f6634296b6d4a1e792b25f26fd07e27a9e44b15'
+        'Authorization': 'token ' + TOKEN
     }
     response = requests.get(request_url, headers=headers)
     if response.status_code == 200:
@@ -104,5 +108,15 @@ with open('data/crate/crate_dict.json') as f:
 with open('data/only_crate.txt') as f:
     crate_list = [i.strip() for i in f.readlines()]
 
-multi_process_download(download_commit_data, crate_list[0:2000], 4)
+#multi_process_download(download_commit_data, crate_list[12000:14000], 4)
+failed = []
+for i in range(FROM, TO):
+    crate = crate_list[i]
+    try:
+        download_commit_data(crate)
+    except Exception as e:
+        print('failed with', crate)
+        failed.append(crate)
 
+with open('./fails', 'w') as f:
+    f.write('\n'.join(failed))
