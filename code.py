@@ -6,9 +6,9 @@ import multiprocessing
 import urllib.request
 import random
 
-TOKEN = 'YOUR_TOKEN'
-FROM = 12000
-TO = 14000
+TOKEN = 'a4a064891d0941a6e1c9f769b2c3906f65ac6622'
+FROM = 0
+TO = 10000
 
 def rand_select_user_agent():
     USER_AGENT_LIST = [
@@ -58,19 +58,21 @@ def multi_process_download(task, map_list, process_num):
     pool.join()
 
 def download_commit_data(crate_name):
-    print(crate_name)
+    print('Downloading the committers of', crate_name)
     #######This is used for downloading error.#######
-    f = open('data/crate_label.txt')
-    data = [i.strip() for i in f.readlines()]
-    f.close()
+    with open('data/crate_label.txt') as f:
+        data = [i.strip() for i in f.readlines()]
     if crate_name in data:
+        print('The committer info of', crate_name, 'has been downloaded.')
         return
     #################################################
-    try:
-        request_url = crate_dict[crate_name]['repository'] + '/graphs/contributors-data'
-    except:
-        print('no url')
+    repo_url = crate_dict[crate_name]['repository']
+    #print(repo_url)
+    if repo_url == None:
+        print('There is no repository url for', crate_name)
         return
+    
+    request_url = repo_url + '/graphs/contributors-data'
     headers = {
         'user-agent': rand_select_user_agent(),
         'Referer': 'https://github.com/rust-lang/team/graphs/contributors',
@@ -87,17 +89,16 @@ def download_commit_data(crate_name):
         'Authorization': 'token ' + TOKEN
     }
     response = requests.get(request_url, headers=headers)
-    if response.status_code == 200:
-        #print(response)
-        #print(response.text)
+    if response.status_code <= 299:
+        print(response.status_code)
         with open('data/crate/' + crate_name + '_commits.json', 'w') as f:
             json.dump(response.text, f)
     else:
+        print('Response error:', response.status_code)
         return
     #######This is used for downloading error.#######
-    f = open('data/crate_label.txt', 'a')
-    f.write(crate_name + '\n')
-    f.close()
+    with open('data/crate_label.txt', 'a') as f:
+        f.write(crate_name + '\n')
     ################################################# 
 
     time.sleep(random.randint(0, 9))
